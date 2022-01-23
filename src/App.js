@@ -1,22 +1,35 @@
 import { useEffect } from "react";
 import { Form, Button, Row, Col, Container } from "react-bootstrap";
-import { useAllowanceWeth9Query, useApproveWeth9Mutation } from "./redux/api";
+import { useAllowanceWeth9Query, useApproveWeth9Mutation, useLazyAllowanceWeth9Query } from "./redux/api";
+import {useProvider} from './hooks/useProvider'
+import weth9Abi from './abi/weth9.json'
+import {Contract, providers} from 'ethers';
 
 function App() {
-  const {data:allowanceData} = useAllowanceWeth9Query()
-  const [sendApprove, {data: approveData, isLoading, isSuccess, isError}] = useApproveWeth9Mutation()
+  const {provider, signer} = useProvider()
+  const [getAllowance, {data, isLoading, isSuccess, isError}] = useLazyAllowanceWeth9Query()
+  // const [sendApprove, {data: approveData, isLoading, isSuccess, isError}] = useApproveWeth9Mutation()
+
+  useEffect(() => {
+    if(signer) {
+      const {allowance} = new Contract('0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6', weth9Abi, signer )
+      const cb = () => allowance
+      getAllowance(cb)
+    }
+  }, [provider, signer, getAllowance])
+  
 
   const onSubmitHandler = (e) => {
     e.preventDefault();
-    sendApprove()
+    // sendApprove()
   };
   useEffect(() => {
-    console.log({allowanceData: allowanceData?.toString()});
+    // console.log({allowanceData: allowanceData?.toString()});
     // console.log({approveData});
-    // console.log({isLoading});
-    // console.log({isSuccess});
-    // console.log({isError});
-
+    console.log({isLoading});
+    console.log({isSuccess});
+    console.log({isError});
+    console.log({data});
   });
   return (
     <Container>

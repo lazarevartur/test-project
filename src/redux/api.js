@@ -9,13 +9,13 @@ const infura = 'https://goerli.infura.io/v3/c2c3340ee9e34455830c53d3d3916704'
 
 const axiosBaseQuery =
   ({ contractAddress } = { contractAddress: '' }) =>
-  async ({ method, data = [], newContractAddress = '' }) => {
-    const provider = window.ethereum ? new providers.Web3Provider(window.ethereum) : new providers.JsonRpcBatchProvider({url: infura});
-    const signer = await provider.getSigner()
-    const contract = new Contract(newContractAddress ? newContractAddress : contractAddress, weth9Abi, signer)
-    console.log(method,data,newContractAddress, contract);
+  async ({ method, data = [], newContractAddress = '', }) => {
+    // const provider = window.ethereum ? new providers.Web3Provider(window.ethereum) : new providers.JsonRpcBatchProvider({url: infura});
+    // console.log(method,data,newContractAddress, signer)
+    // console.log(...data);
+    // console.log(await method(...data));
     try {
-      const result = await buildQuery(contract[method], data, false)  
+      const result = await buildQuery(method, data, false)  
       return { data: result }
     } catch (axiosError) {
       let err = axiosError
@@ -39,11 +39,11 @@ export const $api = createApi({
       }
     }),
     allowanceWeth9: build.query({
-        query: (body) => {
+        query: (method) => {
             return {
-              method: 'allowance',
+              method,
               data: ['0xF3Bc8C5F2A857d68D5809f02352C9d73656d74D4', '0xd7fE9081b13C030A8b51FE8b809151407e1B965A'],
-              newContractAddress: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6'
+              newContractAddress: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
           }
         }, 
         providesTags: ['allowanceWeth9'],
@@ -61,14 +61,15 @@ export const $api = createApi({
   }),
 });
 
-export const { useTestFetchQuery, useApproveWeth9Mutation, useAllowanceWeth9Query } = $api;
+export const { useTestFetchQuery, useApproveWeth9Mutation, useAllowanceWeth9Query, useLazyAllowanceWeth9Query } = $api;
 
 export const buildQuery = async(
-    method,
+    getMethod,
     args = [],
     estimateGas,
     options = {}
   ) => {
+    const method = getMethod()
     try {
       let tx;
       if (estimateGas) {
@@ -78,6 +79,7 @@ export const buildQuery = async(
           ...options
         });
       } else {
+        
         tx = await method(...args, options);
       }
       if (tx?.wait) {
